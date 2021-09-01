@@ -105,7 +105,7 @@ public class gen_query_window {
                 Random random = new Random();
                 // random a query center
                 GeometryFactory geometryFactory = new GeometryFactory();
-                Coordinate coordinate = new Coordinate(-100+random.nextInt(valueRange)*1.1,random.nextInt(valueRange)*(-5.1));
+                Coordinate coordinate = new Coordinate(-1000+random.nextInt(valueRange)*7.1,random.nextInt(valueRange)*(-50.1));
                 Point queryCenter = geometryFactory.createPoint(coordinate);
                 Envelope topKMbr_op = genSelecTopK(0, testPolys.size(), testPolys,queryCenter,selecTopK);
                 Geometry mbr = geometryFactory.toGeometry(topKMbr_op);
