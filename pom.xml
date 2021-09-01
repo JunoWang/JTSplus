@@ -51,7 +51,18 @@
 			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
-		</dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.opencsv</groupId>
+                <artifactId>opencsv</artifactId>
+                <version>5.3</version>
+            </dependency>
+        </dependencies>
 	<build>
         <sourceDirectory>src/main/java</sourceDirectory>
 		<plugins>            
@@ -110,7 +121,7 @@
         <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.7.201606060606</version>
+                <version>0.8.7</version>
                 <executions>
                     <execution>
                         <goals>
