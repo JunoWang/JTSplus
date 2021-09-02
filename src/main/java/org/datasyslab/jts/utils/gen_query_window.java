@@ -28,11 +28,9 @@ import com.vividsolutions.jts.io.WKTWriter;
 public class gen_query_window {
 
 
-    public static List<Geometry> readRecord(String fileName)throws IOException, CsvException {
-        List<Geometry> testPolys = new ArrayList<Geometry>();
+    public static void readRecord(String fileName, int interval, double selectivity)throws IOException, CsvException {
+        STRtree strtree = new STRtree();
         try {
-            // Array to put all polygon
-
             // Create an object of file reader class with CSV file as a parameter.
             FileReader filereader = new FileReader(fileName);
             // create csvParser object with
@@ -45,44 +43,47 @@ public class gen_query_window {
                     .build();
             String[] nextRecord;
             int listIndex = 0;
+            List<Point> points = new ArrayList<Point>();
             // we are going to read data line by line
             while ((nextRecord = csvReader.readNext()) != null) {
                 assert nextRecord[0] != " ";
-//                System.out.println("arrays[0] is " + nextRecord[0]);
+              //  System.out.println("arrays[7] is " + nextRecord[8]);
                 WKTReader wkt = new WKTReader();
                 Geometry geom = wkt.read(nextRecord[0]);
-                testPolys.add(geom);
+                strtree.insert(geom.getEnvelopeInternal(), geom);
+                if(listIndex%interval == 0 && points.size()<100){
+                    GeometryFactory geometryFactory = new GeometryFactory();
+                    Coordinate coordinate = new Coordinate(Double.valueOf(nextRecord[8]),Double.valueOf(nextRecord[9]));
+                    Point queryCenter = geometryFactory.createPoint(coordinate);
+                    points.add(queryCenter);
+                }
+                listIndex++;
             }
+
+            //1% of selectivity
+            int totalRecords_op = (int) (listIndex * selectivity);
+//            //0.1%
+//            int totalRecords_zop = (int) (listIndex * 0.001);
+//            //0.01%
+//            int totalRecords_zzop = (int) (listIndex * 0.0001);
+//            //0.001%
+//            int totalRecords_zzzop = (int) (listIndex * 0.00001);
+
+
+
+            writeFile(strtree,fileName,totalRecords_op,Double.toString(selectivity), points);
+
         }
         catch (Exception e){
             e.printStackTrace();
         }
-        return testPolys;
     }
     /*
     create one file that contains 1%,0.1%,0.01%,0.001% selectivity query window
     use top 100 neighbor
      */
-    public static void genQueryWindow(List<Geometry> testPolys, String fileName){
 
-        //1% of selectivity
-        int totalRecords_op = (int) (testPolys.size() * 0.01);
-        //0.1%
-        int totalRecords_zop = (int) (testPolys.size() * 0.001);
-        //0.01%
-        int totalRecords_zzop =(int) (testPolys.size() * 0.0001);
-        //0.001%
-        int totalRecords_zzzop = (int) (testPolys.size() * 0.00001);
-
-        writeFile(testPolys,fileName,totalRecords_op,"1%");
-
-
-    }
-    public static Envelope genSelecTopK(int seleStart, int seleEnd, List<Geometry> testPolys, Point queryCenter, int topK){
-        STRtree strtree = new STRtree();
-        for(int i = seleStart ; i < seleEnd; i++){
-            strtree.insert(testPolys.get(i).getEnvelopeInternal(), testPolys.get(i));
-        }
+    public static Envelope genSelecTopK( STRtree strtree, Point queryCenter, int topK){
         Object[] testTopK_op = (Object[])strtree.kNearestNeighbour(queryCenter.getEnvelopeInternal(), queryCenter, new GeometryItemDistance(), topK);
         List topKList_op = Arrays.asList(testTopK_op);
         assert !topKList_op.isEmpty();
@@ -95,19 +96,14 @@ public class gen_query_window {
         }
         return topKMbr;
     }
-    public static void writeFile(List<Geometry> testPolys, String fileName, int selecTopK, String selectivity){
+    public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Point> points){
         try {
             String outputFileName = fileName + "_" + selectivity+".txt";
             FileWriter myWriter = new FileWriter(outputFileName,true);
             for (int i = 0; i < 100; i++) {
                 //create STRtree
-                int valueRange = 10000;
-                Random random = new Random();
-                // random a query center
                 GeometryFactory geometryFactory = new GeometryFactory();
-                Coordinate coordinate = new Coordinate(-1000+random.nextInt(valueRange)*7.1,random.nextInt(valueRange)*(-50.1));
-                Point queryCenter = geometryFactory.createPoint(coordinate);
-                Envelope topKMbr_op = genSelecTopK(0, testPolys.size(), testPolys,queryCenter,selecTopK);
+                Envelope topKMbr_op = genSelecTopK(strtree,points.get(i),selecTopK);
                 Geometry mbr = geometryFactory.toGeometry(topKMbr_op);
                 String mbrWkt = new WKTWriter().writeFormatted(mbr);
                 myWriter.write(mbrWkt + "\n");
@@ -121,10 +117,13 @@ public class gen_query_window {
 
     public static void main(String[] args) throws IOException, CsvException {
         String fileName = "/Users/cwang/Desktop/glin_dataset/TIGER_2015_AREALM.csv";
-        List<Geometry> testPolys = new ArrayList<Geometry>();
-        testPolys = readRecord(fileName);
-        assert !testPolys.isEmpty();
-        System.out.println("the size of converted polygon is " + testPolys.size());
-        genQueryWindow(testPolys,fileName);
+        /*
+        this function write 100 query window with certain selectivity
+        the interval decides row intervals when get a query center
+        selectivity is 1%: 0.01, 0.1% = 0.001, 0.01% = 0.0001, 0.001% = 0.00001
+         */
+        readRecord(fileName,1230,0.01);
+
+
     }
 }
