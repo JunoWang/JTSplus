@@ -122,7 +122,7 @@ public class gen_query_window {
         the interval decides row intervals when get a query center
         selectivity is 1%: 0.01, 0.1% = 0.001, 0.01% = 0.0001, 0.001% = 0.00001
          */
-        readRecord(fileName,1230,0.01);
+        readRecord(fileName,1230,0.001);
 
 
     }
