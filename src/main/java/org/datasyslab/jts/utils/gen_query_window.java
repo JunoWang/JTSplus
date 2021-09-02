@@ -53,7 +53,7 @@ public class gen_query_window {
                 strtree.insert(geom.getEnvelopeInternal(), geom);
                 if(listIndex%interval == 0 && points.size()<100){
                     GeometryFactory geometryFactory = new GeometryFactory();
-                    Coordinate coordinate = new Coordinate(Double.valueOf(nextRecord[8]),Double.valueOf(nextRecord[9]));
+                    Coordinate coordinate = new Coordinate(Double.valueOf(nextRecord[9]),Double.valueOf(nextRecord[8]));
                     Point queryCenter = geometryFactory.createPoint(coordinate);
                     points.add(queryCenter);
                 }
@@ -99,7 +99,7 @@ public class gen_query_window {
     public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Point> points){
         try {
             String outputFileName = fileName + "_" + selectivity+".txt";
-            FileWriter myWriter = new FileWriter(outputFileName,true);
+            FileWriter myWriter = new FileWriter(outputFileName,false);
             for (int i = 0; i < 100; i++) {
                 //create STRtree
                 GeometryFactory geometryFactory = new GeometryFactory();
