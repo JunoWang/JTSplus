@@ -43,7 +43,7 @@ public class gen_query_window {
                     .build();
             String[] nextRecord;
             int listIndex = 0;
-            List<Point> points = new ArrayList<Point>();
+            List<Geometry> points = new ArrayList<Geometry>();
             // we are going to read data line by line
             while ((nextRecord = csvReader.readNext()) != null) {
                 assert nextRecord[0] != " ";
@@ -52,10 +52,7 @@ public class gen_query_window {
                 Geometry geom = wkt.read(nextRecord[0]);
                 strtree.insert(geom.getEnvelopeInternal(), geom);
                 if(listIndex%interval == 0 && points.size()<100){
-                    GeometryFactory geometryFactory = new GeometryFactory();
-                    Coordinate coordinate = new Coordinate(Double.valueOf(nextRecord[9]),Double.valueOf(nextRecord[8]));
-                    Point queryCenter = geometryFactory.createPoint(coordinate);
-                    points.add(queryCenter);
+                    points.add(geom.getCentroid());
                 }
                 listIndex++;
             }
@@ -83,8 +80,8 @@ public class gen_query_window {
     use top 100 neighbor
      */
 
-    public static Envelope genSelecTopK( STRtree strtree, Point queryCenter, int topK){
-        Object[] testTopK_op = (Object[])strtree.kNearestNeighbour(queryCenter.getEnvelopeInternal(), queryCenter, new GeometryItemDistance(), topK);
+    public static Envelope genSelecTopK( STRtree strtree, Geometry queryCenter, int topK){
+        Object[] testTopK_op = strtree.kNearestNeighbour(queryCenter.getEnvelopeInternal(), queryCenter, new GeometryItemDistance(), topK);
         List topKList_op = Arrays.asList(testTopK_op);
         assert !topKList_op.isEmpty();
         assert topKList_op.size() == topK;
@@ -96,11 +93,11 @@ public class gen_query_window {
         }
         return topKMbr;
     }
-    public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Point> points){
+    public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Geometry> points){
         try {
             String outputFileName = fileName + "_" + selectivity+".txt";
             FileWriter myWriter = new FileWriter(outputFileName,false);
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < points.size(); i++) {
                 //create STRtree
                 GeometryFactory geometryFactory = new GeometryFactory();
                 Envelope topKMbr_op = genSelecTopK(strtree,points.get(i),selecTopK);
@@ -116,14 +113,13 @@ public class gen_query_window {
     }
 
     public static void main(String[] args) throws IOException, CsvException {
-        String fileName = "/Users/cwang/Desktop/glin_dataset/TIGER_2015_AREALM.csv";
+        String fileName = "src/main/java/org/datasyslab/jts/utils/TIGER_2015_AREALM_10000.csv";
+//        String fileName = "/Users/cwang/Desktop/glin_dataset/TIGER_2015_AREALM.csv";
         /*
         this function write 100 query window with certain selectivity
         the interval decides row intervals when get a query center
         selectivity is 1%: 0.01, 0.1% = 0.001, 0.01% = 0.0001, 0.001% = 0.00001
          */
-        readRecord(fileName,1230,0.001);
-
-
+        readRecord(fileName, 10, 0.001);
     }
 }
