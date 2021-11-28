@@ -6,29 +6,30 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
 
+
+import com.vividsolutions.jts.io.WKTReader;
+
+//import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+//import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.index.strtree.GeometryItemDistance;
+import com.vividsolutions.jts.index.strtree.STRtree;
+import com.vividsolutions.jts.io.WKTWriter;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import com.sun.tools.doclint.Env;
-import com.vividsolutions.jts.io.WKBWriter;
-import com.vividsolutions.jts.io.WKTReader;
+//import com.sun.tools.doclint.Env;
+//import com.vividsolutions.jts.io.WKBWriter;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.index.strtree.GeometryItemDistance;
-import com.vividsolutions.jts.index.strtree.STRtree;
-import com.vividsolutions.jts.io.WKTWriter;
 
 public class gen_query_window {
-
-
-    public static void readRecord(String fileName, int interval, double selectivity)throws IOException, CsvException {
+    public static void readRecord(String fileName, int interval, double selectivity) throws IOException, CsvException {
         STRtree strtree = new STRtree();
         try {
             // Create an object of file reader class with CSV file as a parameter.
@@ -47,11 +48,11 @@ public class gen_query_window {
             // we are going to read data line by line
             while ((nextRecord = csvReader.readNext()) != null) {
                 assert nextRecord[0] != " ";
-              //  System.out.println("arrays[7] is " + nextRecord[8]);
+                //  System.out.println("arrays[7] is " + nextRecord[8]);
                 WKTReader wkt = new WKTReader();
                 Geometry geom = wkt.read(nextRecord[0]);
                 strtree.insert(geom.getEnvelopeInternal(), geom);
-                if(listIndex%interval == 0 && points.size()<100){
+                if (listIndex % interval == 0 && points.size() < 100) {
                     points.add(geom.getCentroid());
                 }
                 listIndex++;
@@ -67,11 +68,8 @@ public class gen_query_window {
 //            int totalRecords_zzzop = (int) (listIndex * 0.00001);
 
 
-
-            writeFile(strtree,fileName,totalRecords_op,Double.toString(selectivity), points);
-
-        }
-        catch (Exception e){
+            writeFile(strtree, fileName, totalRecords_op, Double.toString(selectivity), points);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -80,12 +78,12 @@ public class gen_query_window {
     use top 100 neighbor
      */
 
-    public static Envelope genSelecTopK( STRtree strtree, Geometry queryCenter, int topK){
+    public static Envelope genSelecTopK(STRtree strtree, Geometry queryCenter, int topK) {
         Object[] testTopK_op = strtree.kNearestNeighbour(queryCenter.getEnvelopeInternal(), queryCenter, new GeometryItemDistance(), topK);
         List topKList_op = Arrays.asList(testTopK_op);
         assert !topKList_op.isEmpty();
         assert topKList_op.size() == topK;
-      //  System.out.println("first one in topK list "+topKList_op.get(0));
+        //  System.out.println("first one in topK list "+topKList_op.get(0));
         Envelope topKMbr = new Envelope();
         for (Object o : topKList_op) {
             Geometry geometry = (Geometry) o;
@@ -93,14 +91,15 @@ public class gen_query_window {
         }
         return topKMbr;
     }
-    public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Geometry> points){
+
+    public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Geometry> points) {
         try {
-            String outputFileName = fileName + "_" + selectivity+".txt";
-            FileWriter myWriter = new FileWriter(outputFileName,false);
+            String outputFileName = fileName + "_" + selectivity + ".txt";
+            FileWriter myWriter = new FileWriter(outputFileName, false);
             for (int i = 0; i < points.size(); i++) {
                 //create STRtree
                 GeometryFactory geometryFactory = new GeometryFactory();
-                Envelope topKMbr_op = genSelecTopK(strtree,points.get(i),selecTopK);
+                Envelope topKMbr_op = genSelecTopK(strtree, points.get(i), selecTopK);
                 Geometry mbr = geometryFactory.toGeometry(topKMbr_op);
                 String mbrWkt = new WKTWriter().writeFormatted(mbr);
                 myWriter.write(mbrWkt + "\n");
@@ -111,6 +110,7 @@ public class gen_query_window {
             e.printStackTrace();
         }
     }
+
 
     public static void main(String[] args) throws IOException, CsvException {
         String fileName = "src/main/java/org/datasyslab/jts/utils/TIGER_2015_AREALM_10000.csv";
