@@ -211,11 +211,11 @@ public class Label {
     StringBuffer buf = new StringBuffer();
     if (elt[0] != null) {
       buf.append("A:");
-      buf.append(elt[0].toString());
+      buf.append(elt[0]);
     }
     if (elt[1] != null) {
       buf.append(" B:");
-      buf.append(elt[1].toString());
+      buf.append(elt[1]);
     }
     return buf.toString();
   }
