@@ -129,7 +129,7 @@ public class gen_query_window {
 
     public static void writeFile(STRtree strtree, String fileName, int selecTopK, String selectivity, List<Geometry> points) {
         try {
-            String outputFileName = "/home/cwang/data/qw/"+fileName + "_" + selectivity + ".txt";
+            String outputFileName = fileName + "_" + selectivity + ".txt";
             FileWriter myWriter = new FileWriter(outputFileName, false);
             for (int i = 0; i < points.size(); i++) {
                 //create STRtree
